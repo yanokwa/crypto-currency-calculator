@@ -1,2 +1,2 @@
-crypto-currency-calculator
+Crypto Currency Calculator
 ==========================
