@@ -89,7 +89,7 @@ h5 {
   font-size: 18px;
 }
 
-h6 {
+h6,input {
   font-size: 16px;
 }
 
@@ -157,30 +157,25 @@ p img {
   border: none;
 }
 
-pre, code {
-  width: 100%;
+pre,code,textarea {
   color: #222;
-  background-color: #fff;
+  width: 100%;
 
   font-family: Monaco, "Bitstream Vera Sans Mono", "Lucida Console", Terminal, monospace;
   font-size: 14px;
+}
 
-  border-radius: 2px;
-  -moz-border-radius: 2px;
-  -webkit-border-radius: 2px;
+textarea {
+  box-shadow: 0 0 10px rgba(0,0,0,.1);
+  font-size: 12px;
 }
 
 pre {
-  width: 100%;
-  padding: 10px;
-  box-shadow: 0 0 10px rgba(0,0,0,.1);
   overflow: auto;
 }
 
 code {
-  padding: 3px;
-  margin: 0 3px;
-  box-shadow: 0 0 10px rgba(0,0,0,.1);
+  font-size: 12px;
 }
 
 pre code {
@@ -251,7 +246,6 @@ td {
 
 form {
   background: #f2f2f2;
-  padding: 20px;
 }
 
 /*******************************************************************************
@@ -364,6 +358,10 @@ Full-Width Styles
 
 #footer_wrap {
   background: #212121;
+}
+
+.output {
+  background: green;
 }
 
 
