@@ -232,6 +232,9 @@ table {
   text-align: left;
  }
 
+th,td{
+  font-size:10pt;
+}
 th {
   font-family: 'Lucida Grande', 'Helvetica Neue', Helvetica, Arial, sans-serif;
   padding: 10px;
@@ -359,12 +362,6 @@ Full-Width Styles
 #footer_wrap {
   background: #212121;
 }
-
-.output {
-  background: green;
-}
-
-
 
 /*******************************************************************************
 Small Device Styles

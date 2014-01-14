@@ -12,6 +12,8 @@ Transaction.prototype.toString = function () {
 
 function calculateGainsAndLosses() {
 
+	clearErrorAndOutput();
+
 	var transactions = document.forms[0].elements['capital-gains-and-losses-input'].value.trim().split("\n");
 
 	var held = [];
@@ -29,8 +31,6 @@ function calculateGainsAndLosses() {
 		}
 
 	}
-	//held.sort(compareByDate);
-	//sold.sort(compareByDate);
 
 	var gains = 0;
 
@@ -40,7 +40,7 @@ function calculateGainsAndLosses() {
 		currentSale.cost = -currentSale.cost;
 
 		if (held.length <= 0) {
-			writeOutput("Trying to sell Bitcoin you don't have.");
+			writeError("Stop trying to sell coins you don't have.");
 		}
 
 		while (currentSale.coins > 0) {
@@ -63,6 +63,7 @@ function calculateGainsAndLosses() {
 			}
 		}
 	}
+
 	roundedGains = Math.round( gains * 100 ) / 100
 	writeOutput(roundedGains);
 
@@ -73,6 +74,18 @@ function compareByDate(a, b) {
 	return a.date.localeCompare(b.date);
 }
 
+function clearErrorAndOutput() {
+	document.getElementById("capital-gains-and-losses-error").innerHTML = '';
+	document.getElementById("capital-gains-and-losses-output").innerHTML = '';
+}
+
+function writeError(error) {
+    document.getElementById("capital-gains-and-losses-error").innerHTML = error;
+}
 function writeOutput(output) {
-    document.getElementById("capital-gains-and-losses-output").innerHTML = output;
+	var startTable ="<table><tr><td><strong>Year</strong></td><td><strong>Short term</strong></td><td><strong>Long term</strong></th></tr>";
+	var row = "<tr><td>2013</td><td>"+output+"</td><td>"+output+"</th></tr>";
+	var endTable="</table>";
+
+    document.getElementById("capital-gains-and-losses-output").innerHTML = startTable + row + endTable;
 }
