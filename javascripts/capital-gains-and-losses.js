@@ -20,8 +20,8 @@ function calculateGainsAndLosses() {
 	var sold = [];
 	
 	for (var i = 0; i < transactions.length; i++) {
-		var attr = transactions[i].split(",");
-		var transaction = new Transaction(attr[0], attr[1], attr[2]);
+		var attr = transactions[i].split(/\s+/g);
+		var transaction = new Transaction(attr[0], attr[1], attr[2].replace('$','').replace(',',''));
 
 		// buy or incoming gift
 		if (transaction.cost > 0 || (transaction.cost == 0 && transaction.coins > 0)) {
@@ -32,7 +32,10 @@ function calculateGainsAndLosses() {
 
 	}
 
-	var gains = 0;
+	held.sort(compareByDate);
+	sold.sort(compareByDate);
+
+	var gains = {};
 
 	for (var i = 0; i < sold.length; i++) {
 		var currentSale = sold[i];
@@ -44,12 +47,15 @@ function calculateGainsAndLosses() {
 		}
 
 		while (currentSale.coins > 0) {
+			if (! (currentSale.date.substring(0,4) in gains)) {
+				gains[currentSale.date.substring(0,4)] = 0;
+			}
 			if (currentSale.coins <= held[0].coins) {
 				var heldCost = (held[0].perCoin * currentSale.coins);
 				held[0].coins -= currentSale.coins;
 				held[0].cost -= heldCost;
 
-				gains += (currentSale.cost - heldCost)
+				gains[currentSale.date.substring(0,4)] += (currentSale.cost - heldCost);
 
 				currentSale.coins = 0;
 			} else { 
@@ -57,15 +63,14 @@ function calculateGainsAndLosses() {
 				currentSale.coins -= held[0].coins;
 				currentSale.cost -= soldRevenue;
 				
-				gains += (soldRevenue - held[0].cost);
+				gains[currentSale.date.substring(0,4)] += (soldRevenue - held[0].cost);
 
 				held.shift();
 			}
 		}
 	}
 
-	roundedGains = Math.round( gains * 100 ) / 100
-	writeOutput(roundedGains);
+	writeOutput(gains);
 
 
 }
@@ -82,9 +87,14 @@ function clearErrorAndOutput() {
 function writeError(error) {
     document.getElementById("capital-gains-and-losses-error").innerHTML = error;
 }
-function writeOutput(output) {
-	var startTable ="<table><tr><td><strong>Year</strong></td><td><strong>Short term</strong></td><td><strong>Long term</strong></th></tr>";
-	var row = "<tr><td>2013</td><td>"+output+"</td><td>"+output+"</th></tr>";
+function writeOutput(gains) {
+	var startTable ="<table><tr><td><strong>Year</strong></td><td><strong>Gains</strong></td></tr>";
+	var row = '';
+
+	for (year in gains) {
+		row += "<tr><td>"+year+"</td><td>"+ Math.round( gains[year] * 100 ) / 100+"</td></tr>\n";
+	}
+	
 	var endTable="</table>";
 
     document.getElementById("capital-gains-and-losses-output").innerHTML = startTable + row + endTable;
