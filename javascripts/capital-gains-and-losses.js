@@ -18,6 +18,7 @@ function calculateGainsAndLosses() {
 
 	var held = [];
 	var sold = [];
+	var f8949_items = [];
 	
 	for (var i = 0; i < transactions.length; i++) {
 		var attr = transactions[i].split(/\s+/g);
@@ -46,33 +47,49 @@ function calculateGainsAndLosses() {
 			writeError("Stop trying to sell coins you don't have.");
 		}
 
+		// might need to draw from multiple "held" accounts to account for the current sale 
+		// for calculating basis
 		while (currentSale.coins > 0) {
-			if (! (currentSale.date.substring(0,4) in gains)) {
-				gains[currentSale.date.substring(0,4)] = 0;
-			}
-			if (currentSale.coins <= held[0].coins) {
-				var heldCost = (held[0].perCoin * currentSale.coins);
-				held[0].coins -= currentSale.coins;
-				held[0].cost -= heldCost;
+			var currentHold = held[0], year = currentSale.date.substring(0,4);
+			var soldRevenue, heldCost, transactedCoins = Math.min(currentSale.coins, currentHold.coins);
 
-				gains[currentSale.date.substring(0,4)] += (currentSale.cost - heldCost);
+			if (! (year in gains)) {
+				gains[year] = 0;
+			}
+
+			// if the remainder of this sale can be handled by the current held amount
+			if (currentSale.coins <= currentHold.coins) {
+				heldCost = (currentHold.perCoin * currentSale.coins);
+				soldRevenue = currentSale.cost
+
+				currentHold.coins -= currentSale.coins;
+				currentHold.cost -= heldCost;
 
 				currentSale.coins = 0;
+
+			// if the sale cannot be completely handled by the current held amount. 
+			// we'll partially handle the sale and move onto the next held amount
 			} else { 
-				var soldRevenue = (currentSale.perCoin * held[0].coins);
-				currentSale.coins -= held[0].coins;
+				soldRevenue = (currentSale.perCoin * currentHold.coins);
+				heldCost = currentHold.cost
+				currentSale.coins -= currentHold.coins;
 				currentSale.cost -= soldRevenue;
 				
-				gains[currentSale.date.substring(0,4)] += (soldRevenue - held[0].cost);
-
 				held.shift();
 			}
+
+			gain = soldRevenue - heldCost;
+			gains[year] += gain;
+
+			// for 8949 reporting
+			// each line requires:
+			// description | date acquired | date sold | proceeds | cost/basis | adjustments (N/A) | gain / loss
+			f8949_items.push([transactedCoins.toFixed(5) + " bitcoin", currentHold.date, currentSale.date, outputAsCurrency(soldRevenue), outputAsCurrency(heldCost), outputAsCurrency(gain)]);
+
 		}
 	}
 
-	writeOutput(gains);
-
-
+	writeOutput(gains, f8949_items);
 }
 
 function compareByDate(a, b) {
@@ -82,12 +99,17 @@ function compareByDate(a, b) {
 function clearErrorAndOutput() {
 	document.getElementById("capital-gains-and-losses-error").innerHTML = '';
 	document.getElementById("capital-gains-and-losses-output").innerHTML = '';
+	document.getElementById("capital-gains-and-losses-output-8949").innerHTML = '';	
 }
 
 function writeError(error) {
     document.getElementById("capital-gains-and-losses-error").innerHTML = error;
 }
-function writeOutput(gains) {
+function outputAsCurrency(amt) { 
+  return '$' + amt.toFixed(2).replace(/\d(?=(\d{3})+\.)/g, '$&,');
+}
+
+function writeOutput(gains, f8949_items) {
 	var startTable ="<table><tr><td><strong>Year</strong></td><td><strong>Gains</strong></td></tr>";
 	var row = '';
 
@@ -97,5 +119,25 @@ function writeOutput(gains) {
 	
 	var endTable="</table>";
 
-    document.getElementById("capital-gains-and-losses-output").innerHTML = startTable + row + endTable;
+  document.getElementById("capital-gains-and-losses-output").innerHTML = startTable + row + endTable;
+
+
+  var input = document.querySelector('input[name="8949_output"]');
+	if (input.checked) {
+		header = "<div><strong>Itemized transactions for Form 8949</strong></div>"
+		startTable ="<table><tr><td><strong>Description</strong></td><td><strong>acquired</strong></td><td><strong>sold</strong></td><td><strong>proceeds</strong></td><td><strong>cost/basis</strong></td><td><strong>gains/losses</strong></td></tr>";
+		row = '';
+
+
+		f8949_items.forEach(function(transaction, idx){
+			row += "<tr>";
+			transaction.forEach(function(cell, idx){
+				row += "<td style='text-align:right'>" + cell + "</td>";
+			});
+			row += "</tr>";
+		});
+  	document.getElementById("capital-gains-and-losses-output-8949").innerHTML = header + startTable + row + endTable;
+
+	}
+
 }
