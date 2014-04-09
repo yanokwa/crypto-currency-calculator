@@ -58,18 +58,19 @@
 2014-01-01 1.01 813.38</code></pre>
 <br/>
 
-<p><i>(note that you probably want to aggregate to transactions to the day, as that corresponds to the reporting requirements for <a href="http://www.irs.gov/pub/irs-pdf/f8949.pdf">Form 8949</a>)</i></p>
+<p style="font-style: italic">(note that you probably want to aggregate transactions to the day, as that corresponds to the reporting requirements for <a href="http://www.irs.gov/pub/irs-pdf/f8949.pdf">Form 8949</a>)</p>
 
             <form>
               <strong>Paste your transaction history below</strong>
               <textarea name="capital-gains-and-losses-input" rows="10" cols="30"></textarea><br />
-              <input type="checkbox" name="8949_output" /><label name="8949_output">Output itemized transactions for <a href="http://www.irs.gov/pub/irs-pdf/f8949.pdf">Form 8949</a></label><br />
+              <input type="checkbox" id="8949_output" name="8949_output" /><label for="8949_output" name="8949_output">Output itemized transactions for <a href="http://www.irs.gov/pub/irs-pdf/f8949.pdf">Form 8949</a></label><br />
               <input type="button" onclick="calculateGainsAndLosses()" value="Calculate gains/losses" />
             </form>
             <br/>
             <strong>Capital gains and losses result</strong>
             <div id="capital-gains-and-losses-error"></div>
             <div id="capital-gains-and-losses-output"></div>
+            <div id="capital-gains-and-losses-output-8949"></div>
           </section>
         </div>
 
