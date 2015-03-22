@@ -1,9 +1,11 @@
 
-function Transaction(date, coins, cost) {
+function Transaction(date, coins, cost, mined) {
 	this.date = date;
+	this.datetime = new Date(date.replace('_', ' '))
 	this.coins = Number(coins.replace(/[^\d.-]/g,''));
 	this.cost = Number(cost.replace(/[^\d.-]/g,''));
 	this.perCoin = 1.0 * this.cost / this.coins;
+	this.mined = !!mined;
 }
 
 Transaction.prototype.toString = function () {
@@ -18,13 +20,16 @@ function calculateGainsAndLosses() {
 
 	var held = [];
 	var sold = [];
-	var f8949_items = [];
+	var mined = [];
 	
 	for (var i = 0; i < transactions.length; i++) {
 		var attr = transactions[i].split(/\s+/g);
-		var transaction = new Transaction(attr[0], attr[1], attr[2].replace('$','').replace(',',''));
+		var transaction = new Transaction(attr[0], attr[1], attr[2].replace('$','').replace(',',''), attr.length > 3 ? attr[3] : null);
 
-		// buy or incoming gift
+		if(transaction.mined) 
+			mined.push(transaction); 
+
+		// buy or incoming gift or mined
 		if (transaction.cost > 0 || (transaction.cost == 0 && transaction.coins > 0)) {
 			held.push(transaction);
 		} else { // sale or outgoing gift
@@ -36,8 +41,10 @@ function calculateGainsAndLosses() {
 	held.sort(compareByDate);
 	sold.sort(compareByDate);
 
-	var gains = {};
+	var gains = {longterm: {}, shortterm: {}};
+	var f8949_items = [];
 
+	// Calculate gains from selling coin
 	for (var i = 0; i < sold.length; i++) {
 		var currentSale = sold[i];
 		currentSale.coins = -currentSale.coins;
@@ -53,8 +60,12 @@ function calculateGainsAndLosses() {
 			var currentHold = held[0], year = currentSale.date.substring(0,4);
 			var soldRevenue, heldCost, transactedCoins = Math.min(currentSale.coins, currentHold.coins);
 
-			if (! (year in gains)) {
-				gains[year] = 0;
+			// A short term gain if sold within a year; otherwise long term capital gain
+			short_term =  currentSale.datetime.getTime() - currentHold.datetime.getTime() < 365 * 24 * 60 * 60 * 1000
+
+			gain_type = short_term ? 'shortterm' : 'longterm'
+			if (! (year in gains[gain_type])) {
+				gains[gain_type][year] = 0;
 			}
 
 			// if the remainder of this sale can be handled by the current held amount
@@ -79,7 +90,7 @@ function calculateGainsAndLosses() {
 			}
 
 			gain = soldRevenue - heldCost;
-			gains[year] += gain;
+			gains[gain_type][year] += gain;
 
 			// for 8949 reporting
 			// each line requires:
@@ -89,7 +100,19 @@ function calculateGainsAndLosses() {
 		}
 	}
 
+	// calculate gains from mining coin
+	for (idx in mined) {
+		transaction = mined[idx]
+		year = transaction.date.substring(0,4)
+		if (! (year in gains.shortterm)) {
+			gains.shortterm[year] = 0;
+		}
+		gains.shortterm[year] += transaction.cost
+	}
+
 	writeOutput(gains, f8949_items);
+
+
 }
 
 function compareByDate(a, b) {
@@ -110,11 +133,18 @@ function outputAsCurrency(amt) {
 }
 
 function writeOutput(gains, f8949_items) {
-	var startTable ="<table><tr><td><strong>Year</strong></td><td><strong>Gains</strong></td></tr>";
+	var startTable ="<table><tr><td><strong>Year</strong></td><td><strong>Short-term Gains</strong></td><td><strong>Long-term Gains</strong></td></tr>";
 	var row = '';
 
-	for (year in gains) {
-		row += "<tr><td>"+year+"</td><td>"+ Math.round( gains[year] * 100 ) / 100+"</td></tr>\n";
+	years_set = new Set(Object.keys(gains.shortterm).concat(Object.keys(gains.longterm)))
+	years = []
+	for (year of years_set) years.push(year)
+	years.sort()
+
+	for (year of years) {
+		shortterm = (year in gains.shortterm) ? gains.shortterm[year] * 100 : 0
+		longterm = (year in gains.longterm) ? gains.longterm[year] * 100 : 0
+		row += "<tr><td>"+year+"</td><td>"+ Math.round( shortterm ) / 100+"</td><td>"+ Math.round( longterm ) / 100+"</td></tr>\n";
 	}
 	
 	var endTable="</table>";
